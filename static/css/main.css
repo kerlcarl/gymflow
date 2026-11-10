@@ -1,0 +1,10 @@
+body { font-family: Arial, Helvetica, sans-serif; margin: 0; color: #1d2a3a; }
+header { display: flex; align-items: center; gap: 1.5rem; padding: 0.75rem 1.5rem; background: #1d2a3a; color: #fff; }
+header h1 { margin: 0; font-size: 1.4rem; }
+nav { display: flex; gap: 0.5rem; }
+.tab { background: transparent; color: #fff; border: 1px solid #fff; border-radius: 4px; padding: 0.4rem 0.9rem; cursor: pointer; }
+.tab.active { background: #fff; color: #1d2a3a; }
+#server-status { margin-left: auto; font-size: 0.85rem; }
+main { padding: 1.5rem; }
+.view { display: none; }
+.view.active { display: block; }

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GymFlow</title>
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+  <header>
+    <h1>GymFlow</h1>
+    <nav>
+      <button class="tab active" data-target="mitglieder">Mitglieder</button>
+      <button class="tab" data-target="kurse">Kurse</button>
+      <button class="tab" data-target="buchungen">Buchungen</button>
+    </nav>
+    <span id="server-status">Server: …</span>
+  </header>
+
+  <main>
+    <section id="mitglieder" class="view active">
+      <h2>Mitglieder</h2>
+      <p>TODO: Tabelle und Formular für Mitglieder</p>
+    </section>
+    <section id="kurse" class="view">
+      <h2>Kurse</h2>
+      <p>TODO: Tabelle und Formular für Kurse (inkl. freie Plätze)</p>
+    </section>
+    <section id="buchungen" class="view">
+      <h2>Buchungen</h2>
+      <p>TODO: Kurs buchen / Buchung stornieren</p>
+    </section>
+  </main>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
+  <script src="js/api.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
