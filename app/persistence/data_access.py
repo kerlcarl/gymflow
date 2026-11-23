@@ -6,6 +6,11 @@ alle Zugriffe eines Requests in derselben Session laufen.
 
 Hier stehen keine Geschäftsregeln. Ob z. B. ein Kurs noch Platz hat,
 entscheidet der Business Layer; hier wird nur gezählt.
+
+Transaktionen: Die Methoden rufen nur flush() auf (Änderungen gehen an die
+DB, die neue ID ist danach bekannt), aber nie commit(). Wann eine Transaktion
+abgeschlossen wird, ist fachlich bestimmt und gehört darum in den Business
+Service (Schaaf, 2026, Einheit 3, Abschnitt 2.1.1 «Transaktionen»).
 """
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
@@ -40,13 +45,12 @@ class MitgliedDataAccess:
     def speichern(self, mitglied: Mitglied) -> Mitglied:
         """Neues Mitglied anlegen oder geändertes Mitglied speichern."""
         self.db.add(mitglied)
-        self.db.commit()
-        self.db.refresh(mitglied)  # lädt z. B. die neu vergebene ID
+        self.db.flush()  # schickt INSERT/UPDATE/DELETE an die DB, noch ohne commit
         return mitglied
 
     def loeschen(self, mitglied: Mitglied) -> None:
         self.db.delete(mitglied)
-        self.db.commit()
+        self.db.flush()  # schickt INSERT/UPDATE/DELETE an die DB, noch ohne commit
 
 
 class KursDataAccess:
@@ -61,13 +65,12 @@ class KursDataAccess:
 
     def speichern(self, kurs: Kurs) -> Kurs:
         self.db.add(kurs)
-        self.db.commit()
-        self.db.refresh(kurs)
+        self.db.flush()  # schickt INSERT/UPDATE/DELETE an die DB, noch ohne commit
         return kurs
 
     def loeschen(self, kurs: Kurs) -> None:
         self.db.delete(kurs)
-        self.db.commit()
+        self.db.flush()  # schickt INSERT/UPDATE/DELETE an die DB, noch ohne commit
 
 
 class BuchungDataAccess:
@@ -112,6 +115,5 @@ class BuchungDataAccess:
 
     def speichern(self, buchung: Buchung) -> Buchung:
         self.db.add(buchung)
-        self.db.commit()
-        self.db.refresh(buchung)
+        self.db.flush()  # schickt INSERT/UPDATE/DELETE an die DB, noch ohne commit
         return buchung
