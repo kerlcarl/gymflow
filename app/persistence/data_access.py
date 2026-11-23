@@ -11,9 +11,14 @@ Transaktionen: Die Methoden rufen nur flush() auf (Änderungen gehen an die
 DB, die neue ID ist danach bekannt), aber nie commit(). Wann eine Transaktion
 abgeschlossen wird, ist fachlich bestimmt und gehört darum in den Business
 Service (Schaaf, 2026, Einheit 3, Abschnitt 2.1.1 «Transaktionen»).
+
+Eager Loading: Wo Listen von Buchungen zusammen mit Mitglied und Kurs
+gebraucht werden, werden diese mit selectinload() gleich mitgeladen. Sonst
+würde für jede Buchung eine eigene Abfrage abgesetzt (N+1-Problem, Schaaf,
+2026, Einheit 3, Abschnitt 3.2.2 «(Lazy) Loading»).
 """
 from sqlalchemy import func, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.persistence.entities import Buchung, BuchungStatus, Kurs, Mitglied
 
@@ -87,6 +92,20 @@ class BuchungDataAccess:
         )
         return self.db.scalar(abfrage) or 0
 
+    def anzahl_aktive_pro_kurs(self) -> dict[int, int]:
+        """Aktive Buchungen aller Kurse mit EINER Abfrage, als {kurs_id: anzahl}.
+
+        Für die Kursliste (GR-7): statt pro Kurs einmal anzahl_aktive()
+        aufzurufen (N+1-Problem), wird mit GROUP BY für alle Kurse gezählt.
+        Kurse ohne aktive Buchung kommen im Ergebnis nicht vor.
+        """
+        abfrage = (
+            select(Buchung.kurs_id, func.count())
+            .where(Buchung.status == BuchungStatus.AKTIV)
+            .group_by(Buchung.kurs_id)
+        )
+        return {kurs_id: anzahl for kurs_id, anzahl in self.db.execute(abfrage)}
+
     def aktive_buchung(self, mitglied_id: int, kurs_id: int) -> Buchung | None:
         """Die aktive Buchung eines Mitglieds für einen Kurs, falls es eine gibt (für GR-2)."""
         abfrage = select(Buchung).where(
@@ -97,16 +116,22 @@ class BuchungDataAccess:
         return self.db.scalars(abfrage).first()
 
     def fuer_kurs(self, kurs_id: int, nur_aktive: bool = True) -> list[Buchung]:
-        """Buchungen eines Kurses, für die Teilnehmendenliste."""
-        abfrage = select(Buchung).where(Buchung.kurs_id == kurs_id).order_by(Buchung.buchungszeit)
+        """Buchungen eines Kurses, für die Teilnehmendenliste (Mitglied und Kurs gleich mitgeladen)."""
+        abfrage = (
+            select(Buchung)
+            .options(selectinload(Buchung.mitglied), selectinload(Buchung.kurs))
+            .where(Buchung.kurs_id == kurs_id)
+            .order_by(Buchung.buchungszeit)
+        )
         if nur_aktive:
             abfrage = abfrage.where(Buchung.status == BuchungStatus.AKTIV)
         return list(self.db.scalars(abfrage))
 
     def fuer_mitglied(self, mitglied_id: int) -> list[Buchung]:
-        """Alle Buchungen eines Mitglieds, sortiert nach Kursbeginn."""
+        """Alle Buchungen eines Mitglieds, sortiert nach Kursbeginn (Mitglied und Kurs gleich mitgeladen)."""
         abfrage = (
             select(Buchung)
+            .options(selectinload(Buchung.mitglied), selectinload(Buchung.kurs))
             .join(Buchung.kurs)
             .where(Buchung.mitglied_id == mitglied_id)
             .order_by(Kurs.startzeit)
