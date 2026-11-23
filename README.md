@@ -19,13 +19,17 @@ docs/                   Dokumentation
 
 ## Lokal starten
 
-1. Virtual Environment erstellen: `python -m venv .venv`
+1. Virtual Environment erstellen: `python -m venv .venv` (auf dem Mac oft `python3 -m venv .venv`)
 2. Aktivieren:
    - macOS/Linux: `source .venv/bin/activate`
    - Windows: `.venv\Scripts\activate`
 3. Abhängigkeiten installieren: `pip install -r requirements.txt`
-4. Starten: `python main.py`
-5. Im Browser öffnen: http://localhost:8000 (API-Doku: http://localhost:8000/docs)
+4. Optional: `.env.example` nach `.env` kopieren. Ohne `.env` läuft die App mit SQLite (Datei `gymflow.db`, wird automatisch erstellt).
+5. Starten: `python main.py`
+6. Im Browser öffnen: http://localhost:8000 (API-Doku: http://localhost:8000/docs)
+
+Beim ersten Start werden die Tabellen angelegt und Testdaten eingefügt (3 Mitglieder, 3 Kurse, 5 Buchungen).
+Zum Zurücksetzen die Datei `gymflow.db` löschen und neu starten.
 
 In VS Code danach mit `Cmd/Ctrl+Shift+P` → «Python: Select Interpreter» die `.venv` auswählen.
 
