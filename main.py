@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.persistence.database import SessionLocal, init_db
 from app.persistence.testdaten import testdaten_einfuegen
-from app.web.api import router as api_router
+from app.web.api import fehlerbehandlung_einrichten, router as api_router
 
 
 @asynccontextmanager
@@ -31,6 +31,10 @@ app = FastAPI(
 
 # REST-Services (Web Service Layer) unter /api
 app.include_router(api_router, prefix="/api")
+
+# Fachliche Fehler des Business Layers in HTTP-Statuscodes übersetzen
+# (404 / 400 / 409, siehe app/web/api.py unten)
+fehlerbehandlung_einrichten(app)
 
 # Präsentationsschicht: ./static unter / ausliefern (zuletzt mounten,
 # damit die API-Routen nicht überdeckt werden)
