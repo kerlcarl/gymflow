@@ -17,23 +17,123 @@
     <span id="server-status">Server: …</span>
   </header>
 
+  <!-- Meldungen (Erfolg / Fehler vom Server) -->
+  <div id="meldung" class="meldung" hidden></div>
+
   <main>
+    <!-- ============================================================ Mitglieder -->
     <section id="mitglieder" class="view active">
-      <h2>Mitglieder</h2>
-      <p>TODO: Tabelle und Formular für Mitglieder</p>
+      <div class="kopfzeile">
+        <h2>Mitglieder</h2>
+        <input type="search" id="mitglied-suche" placeholder="Name oder E-Mail suchen …">
+        <button id="mitglied-neu" class="primaer">+ Neues Mitglied</button>
+      </div>
+
+      <form id="mitglied-form" class="formular" hidden novalidate>
+        <h3 id="mitglied-form-titel">Neues Mitglied</h3>
+        <input type="hidden" name="mitglied_id">
+        <div class="felder">
+          <label>Vorname <input name="vorname" required maxlength="50"></label>
+          <label>Nachname <input name="nachname" required maxlength="50"></label>
+          <label>E-Mail <input name="email" type="email" required maxlength="100"></label>
+          <label>Geburtsdatum <input name="geburtsdatum" type="date" required></label>
+          <label>Abo-Typ
+            <select name="abo_typ">
+              <option value="BASIC">Basic</option>
+              <option value="PREMIUM">Premium</option>
+            </select>
+          </label>
+        </div>
+        <div class="aktionen">
+          <button type="submit" class="primaer">Speichern</button>
+          <button type="button" class="abbrechen">Abbrechen</button>
+        </div>
+      </form>
+
+      <table>
+        <thead>
+          <tr><th>Name</th><th>E-Mail</th><th>Alter</th><th>Abo</th><th>Mitglied seit</th><th></th></tr>
+        </thead>
+        <tbody id="mitglied-tabelle"></tbody>
+      </table>
     </section>
+
+    <!-- ============================================================ Kurse -->
     <section id="kurse" class="view">
-      <h2>Kurse</h2>
-      <p>TODO: Tabelle und Formular für Kurse (inkl. freie Plätze)</p>
+      <div class="kopfzeile">
+        <h2>Kurse</h2>
+        <button id="kurs-neu" class="primaer">+ Neuer Kurs</button>
+      </div>
+
+      <form id="kurs-form" class="formular" hidden novalidate>
+        <h3 id="kurs-form-titel">Neuer Kurs</h3>
+        <input type="hidden" name="kurs_id">
+        <div class="felder">
+          <label>Titel <input name="titel" required maxlength="80"></label>
+          <label>Trainer:in <input name="trainer" required maxlength="80"></label>
+          <label>Startzeit <input name="startzeit" type="datetime-local" required></label>
+          <label>Dauer (Min.) <input name="dauer_min" type="number" min="1" required></label>
+          <label>Max. Teilnehmende <input name="max_teilnehmende" type="number" min="1" required></label>
+          <label class="checkbox"><input name="nur_premium" type="checkbox"> Nur für Premium</label>
+          <label class="breit">Beschreibung <textarea name="beschreibung" rows="2"></textarea></label>
+        </div>
+        <div class="aktionen">
+          <button type="submit" class="primaer">Speichern</button>
+          <button type="button" class="abbrechen">Abbrechen</button>
+        </div>
+      </form>
+
+      <table>
+        <thead>
+          <tr><th>Startzeit</th><th>Kurs</th><th>Trainer:in</th><th>Dauer</th><th>Auslastung</th><th></th></tr>
+        </thead>
+        <tbody id="kurs-tabelle"></tbody>
+      </table>
     </section>
+
+    <!-- ============================================================ Buchungen -->
     <section id="buchungen" class="view">
       <h2>Buchungen</h2>
-      <p>TODO: Kurs buchen / Buchung stornieren</p>
+
+      <form id="buchung-form" class="formular" novalidate>
+        <h3>Kurs buchen</h3>
+        <div class="felder">
+          <label>Mitglied <select name="mitglied_id" id="buchung-mitglied" required></select></label>
+          <label>Kurs <select name="kurs_id" id="buchung-kurs" required></select></label>
+        </div>
+        <div class="aktionen">
+          <button type="submit" class="primaer">Buchen</button>
+        </div>
+      </form>
+
+      <div class="kopfzeile">
+        <h3>Übersicht</h3>
+        <select id="uebersicht-art">
+          <option value="mitglied">Buchungen eines Mitglieds</option>
+          <option value="kurs">Teilnehmende eines Kurses</option>
+        </select>
+        <select id="uebersicht-auswahl"></select>
+        <label class="checkbox" id="nur-aktive-feld" hidden>
+          <input type="checkbox" id="nur-aktive" checked> nur aktive
+        </label>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>Mitglied</th><th>Kurs</th><th>Kursbeginn</th><th>Gebucht am</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody id="buchung-tabelle"></tbody>
+      </table>
     </section>
   </main>
 
   <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
   <script src="js/api.js"></script>
+  <script src="js/allgemein.js"></script>
+  <script src="js/mitglieder.js"></script>
+  <script src="js/kurse.js"></script>
+  <script src="js/buchungen.js"></script>
+  <!-- main.js zuletzt: startet die Anwendung, wenn alle Bereiche bereit sind -->
   <script src="js/main.js"></script>
 </body>
 </html>

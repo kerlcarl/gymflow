@@ -1,10 +1,189 @@
-body { font-family: Arial, Helvetica, sans-serif; margin: 0; color: #1d2a3a; }
-header { display: flex; align-items: center; gap: 1.5rem; padding: 0.75rem 1.5rem; background: #1d2a3a; color: #fff; }
+/* GymFlow – Gestaltung der Präsentationsschicht.
+   Farben zentral als Variablen, Grössen in rem (relativ zur Schriftgrösse). */
+
+:root {
+    --dunkel: #1d2a3a;
+    --text: #1d2a3a;
+    --grau: #6b7685;
+    --linie: #dfe3e8;
+    --hintergrund: #f5f7fa;
+    --weiss: #ffffff;
+    --akzent: #2f6fdb;
+    --gefahr: #c0392b;
+    --erfolg: #1e8449;
+    --warnung: #d68910;
+    --premium: #8e44ad;
+}
+
+/* ------------------------------------------------------------------ Grundlayout */
+
+* { box-sizing: border-box; }
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    color: var(--text);
+    background: var(--hintergrund);
+}
+
+header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--dunkel);
+    color: var(--weiss);
+}
 header h1 { margin: 0; font-size: 1.4rem; }
 nav { display: flex; gap: 0.5rem; }
-.tab { background: transparent; color: #fff; border: 1px solid #fff; border-radius: 4px; padding: 0.4rem 0.9rem; cursor: pointer; }
-.tab.active { background: #fff; color: #1d2a3a; }
 #server-status { margin-left: auto; font-size: 0.85rem; }
-main { padding: 1.5rem; }
+
+.tab {
+    background: transparent;
+    color: var(--weiss);
+    border: 1px solid var(--weiss);
+    border-radius: 4px;
+    padding: 0.4rem 0.9rem;
+    cursor: pointer;
+}
+.tab.active { background: var(--weiss); color: var(--dunkel); }
+
+main { padding: 1.5rem; max-width: 72rem; margin: 0 auto; }
+
+/* Nur der aktive Bereich ist sichtbar (Wechsel ohne Neuladen der Seite) */
 .view { display: none; }
 .view.active { display: block; }
+
+h2 { margin: 0; }
+h3 { margin: 0 0 0.75rem 0; font-size: 1.05rem; }
+
+.kopfzeile {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0 0 1rem 0;
+}
+.kopfzeile h2, .kopfzeile h3 { margin: 0 auto 0 0; }
+
+/* ------------------------------------------------------------------ Buttons und Eingaben */
+
+button {
+    font: inherit;
+    font-size: 0.9rem;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--linie);
+    border-radius: 4px;
+    background: var(--weiss);
+    color: var(--text);
+    cursor: pointer;
+}
+button:hover { border-color: var(--grau); }
+button.primaer { background: var(--akzent); border-color: var(--akzent); color: var(--weiss); }
+button.primaer:hover { filter: brightness(0.92); }
+button.gefahr { color: var(--gefahr); }
+button.gefahr:hover { border-color: var(--gefahr); }
+
+input, select, textarea {
+    font: inherit;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--linie);
+    border-radius: 4px;
+    background: var(--weiss);
+    color: var(--text);
+}
+input[type="search"] { min-width: 18rem; }
+input:invalid:focus { border-color: var(--gefahr); }
+
+/* ------------------------------------------------------------------ Formulare */
+
+.formular {
+    background: var(--weiss);
+    border: 1px solid var(--linie);
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    margin: 0 0 1.5rem 0;
+}
+.felder {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+    gap: 0.75rem 1rem;
+}
+.felder label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: var(--grau); }
+.felder label.breit { grid-column: 1 / -1; }
+label.checkbox { flex-direction: row; align-items: center; gap: 0.4rem; font-size: 0.9rem; }
+.felder label.checkbox { align-self: end; padding-bottom: 0.5rem; }
+.aktionen { display: flex; gap: 0.5rem; margin-top: 1rem; }
+
+/* ------------------------------------------------------------------ Tabellen */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--weiss);
+    border: 1px solid var(--linie);
+    border-radius: 6px;
+}
+th, td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--linie); vertical-align: middle; }
+th { font-size: 0.8rem; color: var(--grau); text-transform: uppercase; letter-spacing: 0.03em; }
+tbody tr:hover { background: var(--hintergrund); }
+td.leer { color: var(--grau); text-align: center; padding: 1.5rem; }
+td.zeilen-aktionen { text-align: right; white-space: nowrap; }
+td.zeilen-aktionen button { margin-left: 0.25rem; }
+tr.storniert td { color: var(--grau); }
+.nebentext { font-size: 0.85rem; color: var(--grau); margin-top: 0.2rem; }
+
+/* ------------------------------------------------------------------ Badges und Auslastung */
+
+.badge {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    background: var(--hintergrund);
+    border: 1px solid var(--linie);
+}
+.badge.premium { color: var(--premium); border-color: var(--premium); }
+.badge.aktiv { color: var(--erfolg); border-color: var(--erfolg); }
+
+.auslastung { min-width: 9rem; }
+.auslastung small { color: var(--grau); }
+.balken { height: 0.5rem; background: var(--linie); border-radius: 0.25rem; overflow: hidden; margin-bottom: 0.25rem; }
+.balken-fuellung { height: 100%; background: var(--erfolg); }
+.balken.fast-voll .balken-fuellung { background: var(--warnung); }
+.balken.voll .balken-fuellung { background: var(--gefahr); }
+
+/* ------------------------------------------------------------------ Meldungen */
+
+.meldung {
+    position: fixed;
+    top: 4.5rem;
+    right: 1.5rem;
+    max-width: 26rem;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    color: var(--weiss);
+    box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.15);
+    z-index: 10;
+}
+.meldung.erfolg { background: var(--erfolg); }
+.meldung.fehler { background: var(--gefahr); }
+
+/* ------------------------------------------------------------------ Schmale Bildschirme */
+
+@media (max-width: 48rem) {
+    main { padding: 1rem; }
+    table, thead, tbody, tr, td { display: block; }
+    thead { display: none; }
+    tr { border-bottom: 1px solid var(--linie); padding: 0.5rem 0; }
+    td { border: none; padding: 0.25rem 0.75rem; }
+    td.zeilen-aktionen { text-align: left; }
+    input[type="search"] { min-width: 0; width: 100%; }
+}
+
+/* ------------------------------------------------------------------ Feinschliff Buchungen */
+
+section > h2 { margin-bottom: 1rem; }
+/* Kurstexte in der Auswahl sind lang: breitere Spalten */
+#buchung-form .felder { grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr)); }
