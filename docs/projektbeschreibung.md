@@ -174,20 +174,31 @@ Der Business Layer besteht aus den Klassen `MitgliedService`, `KursService` und 
 
 ### 4.5 Zuordnung der Funktionen zur Architektur
 
-Die folgende Übersicht zeigt, welcher Anteil einer Funktion in welcher Schicht umgesetzt wird. *Stand: geplant – die Tabelle wird nach der Umsetzung mit dem effektiven Stand abgeglichen.*
+Die folgende Übersicht zeigt, welcher Anteil einer Funktion effektiv in welcher Schicht umgesetzt wurde. Angegeben sind jeweils die zuständigen Dateien, Klassen bzw. Methoden. *Stand: umgesetzt, 25.11.2026.*
 
-| Funktion | Präsentation | Service Layer | Business Layer | Persistenz |
+| Funktion | Präsentation (`static/`) | Service Layer (`app/web/`) | Business Layer (`app/business/`) | Persistenz (`app/persistence/`) |
 |---|---|---|---|---|
-| Mitglied erfassen / ändern | Formular, Eingabeprüfung | POST/PUT /api/mitglieder | GR-5 (Alter, E-Mail) | INSERT / UPDATE |
-| Mitglieder anzeigen / suchen | Tabelle, Suchfeld | GET /api/mitglieder | Mapping Entität → DTO | SELECT |
-| Mitglied löschen | Button + Bestätigung | DELETE /api/mitglieder/{id} | GR-6 | DELETE |
-| Kurs erfassen / ändern / löschen | Formular, Tabelle | POST/PUT/DELETE /api/kurse | GR-6 | INSERT / UPDATE / DELETE |
-| Freie Plätze anzeigen | Badge / Auslastungsbalken | GET /api/kurse | GR-7 (Berechnung) | COUNT aktiver Buchungen |
-| Kurs buchen | Button «Buchen», Fehleranzeige | POST /api/buchungen | GR-1 bis GR-4 | INSERT Buchung |
-| Buchung stornieren | Button «Stornieren» | DELETE /api/buchungen/{id} | GR-4 | UPDATE Status |
-| Teilnehmendenliste | Liste pro Kurs | GET /api/kurse/{id}/buchungen | Filter aktive Buchungen | SELECT mit JOIN |
+| Mitglied erfassen / ändern | `mitglieder.js`: Formular, Pflichtfelder und E-Mail-Format per HTML5 | POST /api/mitglieder (201), PUT /api/mitglieder/{id}; `MitgliedRequest` prüft Länge, E-Mail-Muster, Abo-Typ (sonst 422) | `MitgliedService.erstellen` / `aendern`: GR-5 Mindestalter 16 und E-Mail eindeutig (409) | `MitgliedRepository.find_by_email`, `save` (INSERT / UPDATE); UNIQUE-Constraint auf `email` |
+| Mitglieder anzeigen / suchen | `mitglieder.js`: Tabelle, Suchfeld | GET /api/mitglieder?suche=…, GET /api/mitglieder/{id} (404) | `MitgliedService.alle` / `nach_id`: Alter berechnen, Entität → DTO | `MitgliedRepository.find_all` (Suche mit ILIKE, sortiert), `find_by_id` |
+| Mitglied löschen | Button «Löschen» + Bestätigung | DELETE /api/mitglieder/{id} (204) | `MitgliedService.loeschen`: GR-6 Löschschutz (409) | `MitgliedRepository.delete` (DELETE, alte Buchungen per Cascade) |
+| Kurs erfassen / ändern | `kurse.js`: Formular mit `datetime-local`, Zahlen ≥ 1 | POST /api/kurse (201), PUT /api/kurse/{id}; `KursRequest` prüft Dauer und Kapazität > 0 | `KursService.erstellen` / `aendern`: Plausibilität (400), GR-6 Kapazität nicht unter aktive Buchungen (409) | `KursRepository.save` (INSERT / UPDATE), `BuchungRepository.count_aktive` |
+| Kurs löschen | Button «Löschen» + Bestätigung | DELETE /api/kurse/{id} (204) | `KursService.loeschen`: GR-6 Löschschutz (409) | `KursRepository.delete` (DELETE) |
+| Kurse mit freien Plätzen anzeigen | `kurse.js`: Tabelle mit Auslastungsbalken (grün / orange / rot), Premium-Badge | GET /api/kurse, GET /api/kurse/{id} | `KursService.alle` / `_zu_dto`: GR-7 freie Plätze und Auslastung in % berechnen | `KursRepository.find_all` (nach Startzeit), `BuchungRepository.count_aktive_pro_kurs` (eine Abfrage mit GROUP BY) |
+| Kurs buchen | `buchungen.js`: Auswahl Mitglied und Kurs, Button «Buchen», Meldung des Servers | POST /api/buchungen (201); `BuchungRequest` | `BuchungService.buchen`: GR-4 nur zukünftige Kurse, GR-3 Premium, GR-2 keine Doppelbuchung, GR-1 Kapazität (409) | `BuchungRepository.find_aktive`, `count_aktive`, `save` (INSERT) |
+| Buchung stornieren | Button «Stornieren» + Bestätigung | DELETE /api/buchungen/{id} (200, gibt die Buchung mit neuem Status zurück) | `BuchungService.stornieren`: GR-4 bis 2 h vor Kursbeginn (409); idempotent | `BuchungRepository.save` (UPDATE Status → STORNIERT, Soft Delete) |
+| Teilnehmendenliste / Buchungen eines Mitglieds | `buchungen.js`: Übersicht pro Kurs oder pro Mitglied, Schalter «nur aktive»; Sprung aus Mitglieder- und Kursliste | GET /api/kurse/{id}/buchungen?nur_aktive=…, GET /api/mitglieder/{id}/buchungen | `BuchungService.fuer_kurs` / `fuer_mitglied` | `BuchungRepository.find_by_kurs` / `find_by_mitglied` (sortiert nach Kursbeginn per JOIN; Mitglied und Kurs mit `selectinload` mitgeladen) |
+| Fehlerbehandlung (übergreifend) | `allgemein.js`: `zeigeFehler` zeigt die Meldung des Servers an | Zentrale `exception_handler`: `NichtGefunden` → 404, `UngueltigeEingabe` → 400, `GeschaeftsregelVerletzt` → 409; Antwort `{"detail", "code"}` | Fachliche Exceptions mit festem `code` (z. B. `KURS_VOLL`), kein HTTP | Transaktion: Repositories nur `flush()`, `commit()` im Business Service |
 
-*Tabelle 5: Zuordnung der Funktionen zu den Schichten*
+*Tabelle 5: Zuordnung der Funktionen zu den Schichten (effektiver Stand)*
+
+**Abweichungen und Ergänzungen gegenüber der Planung:**
+
+- **Repositories:** Der Datenzugriff wurde nach dem Repository Pattern umgesetzt (`MitgliedRepository`, `KursRepository`, `BuchungRepository`). Die Grundmethoden `find_by_id`, `find_all`, `save` und `delete` stehen in einer gemeinsamen Basisklasse `BaseRepository`.
+- **Eingabeprüfung in zwei Stufen:** Format und Pflichtfelder prüft der Service Layer mit Pydantic (Antwort 422). Die fachlichen Regeln prüft der Business Layer (Antwort 400 bzw. 409). Die Prüfung im Browser dient nur der Benutzerfreundlichkeit.
+- **Zentrale Fehlerübersetzung:** Statt in jedem Endpunkt eine `HTTPException` auszulösen, werden die fachlichen Exceptions einmal zentral in HTTP-Statuscodes übersetzt.
+- **Stornieren liefert die Buchung zurück:** Da die Buchung nicht gelöscht wird (Soft Delete), antwortet DELETE /api/buchungen/{id} mit 200 und der Buchung im Status STORNIERT. Ein wiederholter Aufruf hat keinen weiteren Effekt (idempotent).
+- **Zusätzlich umgesetzt:** Buchungsübersicht pro Mitglied im GUI, Anzeige stornierter Buchungen (`nur_aktive=false`) sowie eine Darstellung für schmale Bildschirme.
+- **Geschäftsregeln nur auf dem Server:** Ausgebuchte oder Premium-Kurse werden in der Auswahl gekennzeichnet, aber nicht gesperrt. Ob gebucht werden darf, entscheidet ausschliesslich der Business Layer.
 
 ## 5 Reflexion
 
