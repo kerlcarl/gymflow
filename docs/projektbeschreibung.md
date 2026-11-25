@@ -59,7 +59,7 @@ Die Ordnerstruktur im Git-Repository bildet die Schichten direkt ab, damit für 
 | `static/` | Präsentation | index.html, css/main.css, js/*.js (jQuery) |
 | `app/web/` | Web/REST Service Layer | FastAPI-Router (Endpoints) und Messages (Pydantic-Modelle) |
 | `app/business/` | Business Service Layer | Business Services, DTOs, fachliche Exceptions |
-| `app/persistence/` | Persistence Layer | SQLAlchemy-Entitäten, Datenbankverbindung, Data Access |
+| `app/persistence/` | Persistence Layer | SQLAlchemy-Entitäten, Datenbankverbindung, Repositories |
 | `main.py` | Einstiegspunkt | Startet Uvicorn, bindet Router und statische Dateien ein |
 | `docs/` | Dokumentation | Projektbeschreibung (Markdown/PDF), ER-Diagramm |
 
@@ -169,7 +169,7 @@ Der Business Layer besteht aus den Klassen `MitgliedService`, `KursService` und 
 
 - **Domain Entities:** Die Modellklassen `Mitglied`, `Kurs` und `Buchung` (abgeleitet von `DeclarativeBase`) inklusive Beziehungen und Constraints.
 - **Datenbankverbindung:** Konfiguration von Engine und Session; Bereitstellung der Session pro Request über `Depends`.
-- **Data Access:** Lesende und schreibende Datenbankzugriffe (CRUD) sowie spezifische Abfragen, z. B. «Anzahl aktiver Buchungen pro Kurs» oder «Buchungen eines Mitglieds».
+- **Repositories (Data Access):** Je Entität ein Repository nach dem Repository Pattern (`MitgliedRepository`, `KursRepository`, `BuchungRepository`) mit den Grundmethoden `find_by_id`, `find_all`, `save` und `delete` aus einer gemeinsamen Basisklasse sowie spezifischen Abfragen, z. B. «Anzahl aktiver Buchungen pro Kurs» oder «Buchungen eines Mitglieds».
 - Erzeugung des Datenbankschemas aus den Entitätsklassen sowie optionale Testdaten für die Entwicklung.
 
 ### 4.5 Zuordnung der Funktionen zur Architektur

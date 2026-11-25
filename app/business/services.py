@@ -8,7 +8,7 @@ Hier werden die Geschäftsregeln umgesetzt:
 
 Aufbau jedes Service (Schaaf, 2026, Einheit 3):
 - bekommt die Session im Konstruktor (Constructor Injection)
-- greift nur über die Data-Access-Klassen auf die DB zu, schreibt kein SQL
+- greift nur über die Repositories auf die DB zu, schreibt kein SQL
 - prüft die Geschäftsregeln und wirft bei einem Verstoss eine Exception
 - schliesst Änderungen mit commit() ab (Transaktionsgrenze); passiert vorher
   ein Fehler, wird nichts gespeichert
@@ -34,7 +34,7 @@ from app.business.exceptions import (
     UngueltigeEingabe,
     ZuJungError,
 )
-from app.persistence.data_access import BuchungDataAccess, KursDataAccess, MitgliedDataAccess
+from app.persistence.repositories import BuchungRepository, KursRepository, MitgliedRepository
 from app.persistence.database import get_db
 from app.persistence.entities import AboTyp, Buchung, BuchungStatus, Kurs, Mitglied
 
@@ -98,10 +98,10 @@ def zu_buchung_dto(buchung: Buchung) -> BuchungDTO:
 class MitgliedService:
     def __init__(self, db: Session):
         self.db = db
-        self.mitglieder = MitgliedDataAccess(db)
+        self.mitglieder = MitgliedRepository(db)
 
     def alle(self, suche: str | None = None) -> list[MitgliedDTO]:
-        return [zu_mitglied_dto(m) for m in self.mitglieder.alle(suche)]
+        return [zu_mitglied_dto(m) for m in self.mitglieder.find_all(suche)]
 
     def nach_id(self, mitglied_id: int) -> MitgliedDTO:
         return zu_mitglied_dto(self._laden(mitglied_id))
@@ -115,7 +115,7 @@ class MitgliedService:
             geburtsdatum=daten.geburtsdatum,
             abo_typ=abo_typ,
         )
-        self.mitglieder.speichern(mitglied)
+        self.mitglieder.save(mitglied)
         self.db.commit()
         return zu_mitglied_dto(mitglied)
 
@@ -127,7 +127,7 @@ class MitgliedService:
         mitglied.email = daten.email.strip().lower()
         mitglied.geburtsdatum = daten.geburtsdatum
         mitglied.abo_typ = abo_typ
-        self.mitglieder.speichern(mitglied)
+        self.mitglieder.save(mitglied)
         self.db.commit()
         return zu_mitglied_dto(mitglied)
 
@@ -139,13 +139,13 @@ class MitgliedService:
                 "Das Mitglied hat noch aktive Buchungen für kommende Kurse. "
                 "Bitte diese zuerst stornieren."
             )
-        self.mitglieder.loeschen(mitglied)
+        self.mitglieder.delete(mitglied)
         self.db.commit()
 
     # ---- intern ----
 
     def _laden(self, mitglied_id: int) -> Mitglied:
-        mitglied = self.mitglieder.nach_id(mitglied_id)
+        mitglied = self.mitglieder.find_by_id(mitglied_id)
         if mitglied is None:
             raise NichtGefunden(f"Mitglied {mitglied_id} nicht gefunden.")
         return mitglied
@@ -161,7 +161,7 @@ class MitgliedService:
             raise ZuJungError(f"Mitglieder müssen mindestens {MINDESTALTER} Jahre alt sein.")
 
         # GR-5: E-Mail eindeutig
-        vorhanden = self.mitglieder.nach_email(daten.email.strip().lower())
+        vorhanden = self.mitglieder.find_by_email(daten.email.strip().lower())
         if vorhanden is not None and vorhanden.mitglied_id != mitglied_id:
             raise EmailVergebenError(f"Die E-Mail-Adresse {daten.email} ist bereits vergeben.")
 
@@ -179,14 +179,14 @@ class MitgliedService:
 class KursService:
     def __init__(self, db: Session):
         self.db = db
-        self.kurse = KursDataAccess(db)
-        self.buchungen = BuchungDataAccess(db)
+        self.kurse = KursRepository(db)
+        self.buchungen = BuchungRepository(db)
 
     def alle(self) -> list[KursDTO]:
         # Aktive Buchungen aller Kurse mit einer einzigen Abfrage zählen,
         # statt einmal pro Kurs (N+1-Problem, Einheit 3, Abschnitt 3.2.2)
-        anzahl_pro_kurs = self.buchungen.anzahl_aktive_pro_kurs()
-        return [self._zu_dto(k, anzahl_pro_kurs.get(k.kurs_id, 0)) for k in self.kurse.alle()]
+        anzahl_pro_kurs = self.buchungen.count_aktive_pro_kurs()
+        return [self._zu_dto(k, anzahl_pro_kurs.get(k.kurs_id, 0)) for k in self.kurse.find_all()]
 
     def nach_id(self, kurs_id: int) -> KursDTO:
         return self._zu_dto(self._laden(kurs_id))
@@ -202,7 +202,7 @@ class KursService:
             max_teilnehmende=daten.max_teilnehmende,
             nur_premium=daten.nur_premium,
         )
-        self.kurse.speichern(kurs)
+        self.kurse.save(kurs)
         self.db.commit()
         return self._zu_dto(kurs)
 
@@ -210,7 +210,7 @@ class KursService:
         kurs = self._laden(kurs_id)
         self._pruefen(daten)
         # GR-6: Kapazität nicht unter die Zahl der aktiven Buchungen senken
-        aktive = self.buchungen.anzahl_aktive(kurs_id)
+        aktive = self.buchungen.count_aktive(kurs_id)
         if daten.max_teilnehmende < aktive:
             raise KapazitaetZuKleinError(
                 f"Es gibt bereits {aktive} aktive Buchungen. "
@@ -223,7 +223,7 @@ class KursService:
         kurs.dauer_min = daten.dauer_min
         kurs.max_teilnehmende = daten.max_teilnehmende
         kurs.nur_premium = daten.nur_premium
-        self.kurse.speichern(kurs)
+        self.kurse.save(kurs)
         self.db.commit()
         return self._zu_dto(kurs)
 
@@ -234,13 +234,13 @@ class KursService:
             raise HatAktiveBuchungenError(
                 "Der Kurs hat noch aktive Buchungen. Bitte diese zuerst stornieren."
             )
-        self.kurse.loeschen(kurs)
+        self.kurse.delete(kurs)
         self.db.commit()
 
     # ---- intern ----
 
     def _laden(self, kurs_id: int) -> Kurs:
-        kurs = self.kurse.nach_id(kurs_id)
+        kurs = self.kurse.find_by_id(kurs_id)
         if kurs is None:
             raise NichtGefunden(f"Kurs {kurs_id} nicht gefunden.")
         return kurs
@@ -258,7 +258,7 @@ class KursService:
         (Kursliste); sonst wird sie für diesen einen Kurs abgefragt.
         """
         if aktive is None:
-            aktive = self.buchungen.anzahl_aktive(kurs.kurs_id)
+            aktive = self.buchungen.count_aktive(kurs.kurs_id)
         freie_plaetze = max(kurs.max_teilnehmende - aktive, 0)
         auslastung = round(aktive * 100 / kurs.max_teilnehmende)
         return KursDTO(
@@ -283,15 +283,15 @@ class KursService:
 class BuchungService:
     def __init__(self, db: Session):
         self.db = db
-        self.mitglieder = MitgliedDataAccess(db)
-        self.kurse = KursDataAccess(db)
-        self.buchungen = BuchungDataAccess(db)
+        self.mitglieder = MitgliedRepository(db)
+        self.kurse = KursRepository(db)
+        self.buchungen = BuchungRepository(db)
 
     def buchen(self, mitglied_id: int, kurs_id: int) -> BuchungDTO:
-        mitglied = self.mitglieder.nach_id(mitglied_id)
+        mitglied = self.mitglieder.find_by_id(mitglied_id)
         if mitglied is None:
             raise NichtGefunden(f"Mitglied {mitglied_id} nicht gefunden.")
-        kurs = self.kurse.nach_id(kurs_id)
+        kurs = self.kurse.find_by_id(kurs_id)
         if kurs is None:
             raise NichtGefunden(f"Kurs {kurs_id} nicht gefunden.")
 
@@ -304,22 +304,22 @@ class BuchungService:
             raise NurPremiumError("Dieser Kurs ist nur für Mitglieder mit Premium-Abo.")
 
         # GR-2: keine Doppelbuchung (stornierte Buchungen zählen nicht)
-        if self.buchungen.aktive_buchung(mitglied_id, kurs_id) is not None:
+        if self.buchungen.find_aktive(mitglied_id, kurs_id) is not None:
             raise DoppelbuchungError("Das Mitglied hat diesen Kurs bereits gebucht.")
 
         # GR-1: Kapazität
-        if self.buchungen.anzahl_aktive(kurs_id) >= kurs.max_teilnehmende:
+        if self.buchungen.count_aktive(kurs_id) >= kurs.max_teilnehmende:
             raise KursAusgebuchtError("Der Kurs ist ausgebucht.")
 
         # Alle Regeln erfüllt: Buchung anlegen (Buchungszeit und Status AKTIV
         # setzt die Entität automatisch über ihre Default-Werte)
         buchung = Buchung(mitglied=mitglied, kurs=kurs)
-        self.buchungen.speichern(buchung)
+        self.buchungen.save(buchung)
         self.db.commit()
         return zu_buchung_dto(buchung)
 
     def stornieren(self, buchung_id: int) -> BuchungDTO:
-        buchung = self.buchungen.nach_id(buchung_id)
+        buchung = self.buchungen.find_by_id(buchung_id)
         if buchung is None:
             raise NichtGefunden(f"Buchung {buchung_id} nicht gefunden.")
 
@@ -336,21 +336,21 @@ class BuchungService:
 
         # Soft Delete: Status ändern statt löschen, die Historie bleibt erhalten
         buchung.status = BuchungStatus.STORNIERT
-        self.buchungen.speichern(buchung)
+        self.buchungen.save(buchung)
         self.db.commit()
         return zu_buchung_dto(buchung)
 
     def fuer_kurs(self, kurs_id: int, nur_aktive: bool = True) -> list[BuchungDTO]:
         """Teilnehmendenliste eines Kurses."""
-        if self.kurse.nach_id(kurs_id) is None:
+        if self.kurse.find_by_id(kurs_id) is None:
             raise NichtGefunden(f"Kurs {kurs_id} nicht gefunden.")
-        return [zu_buchung_dto(b) for b in self.buchungen.fuer_kurs(kurs_id, nur_aktive)]
+        return [zu_buchung_dto(b) for b in self.buchungen.find_by_kurs(kurs_id, nur_aktive)]
 
     def fuer_mitglied(self, mitglied_id: int) -> list[BuchungDTO]:
         """Alle Buchungen eines Mitglieds (aktive und stornierte)."""
-        if self.mitglieder.nach_id(mitglied_id) is None:
+        if self.mitglieder.find_by_id(mitglied_id) is None:
             raise NichtGefunden(f"Mitglied {mitglied_id} nicht gefunden.")
-        return [zu_buchung_dto(b) for b in self.buchungen.fuer_mitglied(mitglied_id)]
+        return [zu_buchung_dto(b) for b in self.buchungen.find_by_mitglied(mitglied_id)]
 
 
 # ======================================================================
