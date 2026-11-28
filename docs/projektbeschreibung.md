@@ -225,6 +225,12 @@ Die wichtigste Diskussion in der Konzeptphase betraf die Frage, wo welche Regel 
 | Hilfsmittel | Verwendung | Betroffene Stellen |
 |---|---|---|
 | Claude (Anthropic) | Erstellung eines ersten Entwurfs der Projektbeschreibung, des ER-Diagramms, der Architekturgrafik und des Projektgerüsts; Inhalte vom Team geprüft und angepasst | Kapitel 1–5, Abbildungen 1–2 |
+| Claude (Anthropic) über Claude Code | Code-Review der Pull Requests zum Business Layer und Service Layer sowie Abgleich des Projekts mit den Unterrichtsunterlagen und den Projektvorgaben; Hinweise vom Team beurteilt, kein Code geändert | – |
+| Claude (Anthropic) über Claude Code | Umbau des Datenzugriffs auf das Repository Pattern nach Einheit 3 (Basisklasse `BaseRepository`, Umbenennung der Methoden) und Anpassung der Business Services; per Pull Request vom Team geprüft und übernommen | `app/persistence/repositories.py`, `app/business/services.py` |
+| Claude (Anthropic) über Claude Code | Umsetzung der Präsentationsschicht (HTML, CSS, JavaScript/jQuery); per Pull Request vom Team geprüft und übernommen | `static/index.html`, `static/css/main.css`, `static/js/*.js` |
+| Claude (Anthropic) über Claude Code | Automatisierte Tests der REST-Endpunkte und des GUI (Abläufe und Geschäftsregeln) vor dem Zusammenführen der Pull Requests | – (Tests nicht im Repository) |
+| Claude (Anthropic) über Claude Code | Aktualisierung der Projektbeschreibung auf den umgesetzten Stand; per Pull Request vom Team geprüft und übernommen | Kapitel 2.2 (Tabelle 1), 4.4, 4.5 (Tabelle 5) |
+| Playwright | Automatisierter Browser-Test des GUI (durch Claude Code ausgeführt) | – (nicht im Repository) |
 | Visual Studio Code | Entwicklungsumgebung | Programmcode |
 | Git / GitHub | Versionsverwaltung und Zusammenarbeit im Team | Programmcode |
 
