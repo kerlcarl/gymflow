@@ -1,7 +1,7 @@
 # GymFlow – Webanwendung für ein Fitnessstudio
 **Projektbeschreibung: Mitglieder-, Kurs- und Buchungsverwaltung**
 
-Modul «Webbasierte Anwendungen», HS 2026 · Dozent: Marc Schaaf · Team: Carl Klein, *xxx*, *xxx*
+Modul «Webbasierte Anwendungen», HS 2026 · Dozent: Marc Schaaf · Team: Carl Klein, Younus Tariq, Ylllind Gashi
 
 ## Management Summary
 
